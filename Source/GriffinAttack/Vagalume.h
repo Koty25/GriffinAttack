@@ -22,12 +22,15 @@ protected:
 private:
 	class AGriffinCharacter* GriffinCharacter;
 
+	// Vagalume components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UCapsuleComponent* CapsuleComp;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	UStaticMeshComponent* VagalumeMesh;
 
 public:
+
+	// Amount the Griffin is healed for
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = Healing, meta = (AllowPrivateAccess = "true"))
 	float VagalumeHeal = 10.f;
 

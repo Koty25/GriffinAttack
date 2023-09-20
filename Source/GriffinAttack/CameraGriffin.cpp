@@ -27,7 +27,6 @@ ACameraGriffin::ACameraGriffin()
 void ACameraGriffin::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 // Called every frame
@@ -38,6 +37,7 @@ void ACameraGriffin::Tick(float DeltaTime)
 	UpdateCameraPosition();
 }
 
+// Updates camera position on the Z axis
 void ACameraGriffin::UpdateCameraPosition()
 {
 	FVector NewLocation = FMath::VInterpTo(GetActorLocation(), FollowCharacter->GetActorLocation(), GetWorld()->GetDeltaSeconds(), 5.f);

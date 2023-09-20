@@ -18,6 +18,7 @@ APlatformsSpawner::APlatformsSpawner()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Create the components and root
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Root Component"));
 	
 	NextPlatformLocation = CreateDefaultSubobject<UArrowComponent>(TEXT("Next Platform Location"));
@@ -35,10 +36,6 @@ APlatformsSpawner::APlatformsSpawner()
 
 	PlatformPositions = CreateDefaultSubobject<UBoxComponent>(TEXT("Platform Positions"));
 	PlatformPositions->SetupAttachment(RootComponent);
-	
-	// static ConstructorHelpers::FClassFinder<AActor> EdgePieceBPClass(TEXT("/Game/GriffinAttack/Blueprints/BP_EdgePiece"));
-	// static ConstructorHelpers::FClassFinder<AActor> MiddlePieceBPClass(TEXT("/Game/GriffinAttack/Blueprints/BP_MiddlePiece"));
-
 }
 
 // Called when the game starts or when spawned
@@ -46,57 +43,60 @@ void APlatformsSpawner::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Box component location and extent
 	FVector SpawnLocation = PlatformPositions->GetComponentLocation();
 	FVector BoxExtent = PlatformPositions->GetScaledBoxExtent();
 
+	// Amount of platforms to spawn
 	int32 PlatformAmount = FMath::RandRange(3, PlatformAmountMax);
-	UE_LOG(LogTemp,Warning, TEXT("PlatformAmount: %i"), PlatformAmount);
-	
+
+	// Spawn X platforms inside the box component
 	SpawnPlatforms(SpawnLocation, BoxExtent, PlatformAmount);
-	
 }
 
 // Called every frame
 void APlatformsSpawner::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
+// When actor overlaps, spawn more platforms
 void APlatformsSpawner::OnBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	if (OtherActor == Cast<AGriffinCharacter>(UGameplayStatics::GetPlayerPawn(this,0)))
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Spawn"))
 		GriffinAttackGameMode = Cast<AGriffinAttackGameMode>(UGameplayStatics::GetGameMode(this));
 		GriffinAttackGameMode->SpawnNextPlatforms();
 
 		this->SetLifeSpan(TimeToDeletePreviousPlatform);
-		//GetWorldTimerManager().SetTimer(DestroyPlatformTimer, this, &APlatformsSpawner::HandleDestruction, TimeToDeletePreviousPlatform);	
 	}
 }
 
+// Platform Spawner Destruction
 void APlatformsSpawner::HandleDestruction()
 {
 	Destroy();
 }
 
+// Returns next platform location
 FVector APlatformsSpawner::GetNextPlatformLocation()
 {
 	return NextPlatformLocation->GetComponentLocation();
 }
 
+/*	Spawn Platform function. It Spawns the ground and Archer Towers or Vagalumes inside the box component.
+	When a Platform spawns, it is composed of two edge pieces and a random amount of middle pieces.
+	Archer towers can only spawn on top of those middle pieces. It spawns at a set rate (25% by default)
+	This value could be elevated to Blueprint in a subsequent iteration
+*/
 void APlatformsSpawner::SpawnPlatforms(FVector BoxPosition, FVector BoxExtent, int32 Amount)
 {
 	if (EdgePieceClass == nullptr && MiddlePieceClass == nullptr)
 	{
 		return;
 	}
-
-	UE_LOG(LogTemp,Warning, TEXT("SpawnPlatform"));
-	
-	//TArray<AActor*> PlatformPiecesVector;
+		
 	TArray<FVector> SpawnedPoints;
 	int32 MaxPlatforms;
 	TArray<int32> MaxPlatformsVector;
@@ -106,32 +106,36 @@ void APlatformsSpawner::SpawnPlatforms(FVector BoxPosition, FVector BoxExtent, i
 		TArray<AActor*> PlatformPiecesVector;
 		FVector PositionInBox = UKismetMathLibrary::RandomPointInBoundingBox(BoxPosition,BoxExtent);
 
+		// Spawn Vagalume or the Platform with Archer Towers
 		if (FMath::RandRange(0,4) == 0)
 		{
 			MaxPlatformsVector.Add(1);
+			// Checks if the PositionInBox is far enough of other spawned elements
 			while (!IsPointFarEnough(PositionInBox, SpawnedPoints, MinimalDistance, MaxPlatformsVector))
 			{
 				PositionInBox = UKismetMathLibrary::RandomPointInBoundingBox(BoxPosition,BoxExtent);
 			}
+			
 			AVagalume* VagalumePiece = GetWorld()->SpawnActor<AVagalume>(VagalumeClass, PositionInBox, FRotator(0));
 			VagalumePiece->SetLifeSpan(TimeToDeletePreviousPlatform);
 			SpawnedPoints.Add(PositionInBox);
 		}
 		else
 		{
+			// Spawns Platforms and Archer towers
+			
 			MaxPlatforms = FMath::RandRange(1, MaxMiddlePlatforms);
 			MaxPlatformsVector.Add(MaxPlatforms);
-			UE_LOG(LogTemp,Warning, TEXT("MaxPlatforms: %i"), MaxPlatforms);
-	
-		
 
+			// Checks if the PositionInBox is far enough of other spawned elements
 			while (!IsPointFarEnough(PositionInBox, SpawnedPoints, MinimalDistance, MaxPlatformsVector))
 			{
 				PositionInBox = UKismetMathLibrary::RandomPointInBoundingBox(BoxPosition,BoxExtent);
 			}
 
 			SpawnedPoints.Add(PositionInBox);
-	
+
+			// Spawn Edge piece
 			AActor* PlatformPiece = GetWorld()->SpawnActor<AActor>(EdgePieceClass, PositionInBox, FRotator(0));
 			PlatformPiecesVector.Add(PlatformPiece);
 			PlatformPiecesVector[0]->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
@@ -145,20 +149,15 @@ void APlatformsSpawner::SpawnPlatforms(FVector BoxPosition, FVector BoxExtent, i
 				PlatformPiecesVector.Add(PlatformPiece);
 				PlatformPiecesVector[i+1]->AttachToActor(PlatformPiecesVector[0], FAttachmentTransformRules::KeepWorldTransform);
 				PlatformPiecesVector[i+1]->SetLifeSpan(TimeToDeletePreviousPlatform);
-				
+
+				// Spawn Archer Tower with 25% chance, by default
 				if (FMath::RandRange(0,3) == 0)
 				{
-					// FActorSpawnParameters SpawnInfo;
-					// SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 					GriffinAttackGameMode = Cast<AGriffinAttackGameMode>(UGameplayStatics::GetGameMode(this));
-					GriffinAttackGameMode->SpawnArcherTower(SpaceBetweenPieces,NextPieceLocation);					
-					// FVector ArcherTowerLocation = NextPieceLocation + FVector(FMath::RandRange(-SpaceBetweenPieces/3, SpaceBetweenPieces/3), 0, 40);				
-					// AArcherTower* ArcherTowerPiece = GetWorld()->SpawnActor<AArcherTower>(ArcherTowerClass, ArcherTowerLocation, FRotator(0));
-					// //ArcherTowerPiece->AttachToActor(PlatformPiecesVector[i+1], FAttachmentTransformRules::KeepWorldTransform);
-					// UE_LOG(LogTemp,Warning, TEXT("Spawn ArcherTower!"));
+					GriffinAttackGameMode->SpawnArcherTower(SpaceBetweenPieces,NextPieceLocation);
 				}
-		
-		
+
+				// Last Edge piece
 				if (i == (MaxPlatforms-1))
 				{
 					NextPieceLocation += FVector(SpaceBetweenPieces,0,0);
@@ -169,60 +168,10 @@ void APlatformsSpawner::SpawnPlatforms(FVector BoxPosition, FVector BoxExtent, i
 				}
 			}
 		}
-
-
-		
-		//int32 MaxPlatforms = FMath::RandRange(1, MaxMiddlePlatforms);
-		
-	}
-	
-	// int32 MaxPlatforms = FMath::RandRange(1, MaxMiddlePlatforms);
-	//
-	// FVector PositionInBox = UKismetMathLibrary::RandomPointInBoundingBox(BoxPosition,BoxExtent);
-	//
-	// while (!IsPointFarEnough(PositionInBox, SpawnedPoints, MinimalDistance, MaxPlatforms))
-	// {
-	// 	PositionInBox = UKismetMathLibrary::RandomPointInBoundingBox(BoxPosition,BoxExtent);
-	// }
-	//
-	// SpawnedPoints.Add(PositionInBox);
-	//
-	// AActor* PlatformPiece = GetWorld()->SpawnActor<AActor>(EdgePieceClass, PositionInBox, FRotator(0));
-	// PlatformPiecesVector.Add(PlatformPiece);
-	// PlatformPiecesVector[0]->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
-	// PlatformPiecesVector[0]->SetLifeSpan(TimeToDeletePreviousPlatform);		
-	//
-	// FVector NextPieceLocation = PlatformPiecesVector[0]->GetActorLocation();
-	// for (int32 i = 0; i < MaxPlatforms; ++i)
-	// {
-	// 	NextPieceLocation += FVector(SpaceBetweenPieces,0,0);
-	// 	PlatformPiece = GetWorld()->SpawnActor<AActor>(MiddlePieceClass, NextPieceLocation, FRotator(0));
-	// 	PlatformPiecesVector.Add(PlatformPiece);
-	// 	PlatformPiecesVector[i+1]->AttachToActor(PlatformPiecesVector[0], FAttachmentTransformRules::KeepWorldTransform);
-	// 	PlatformPiecesVector[i+1]->SetLifeSpan(TimeToDeletePreviousPlatform);
-	// 	
-	// 	
-	// 	if (i == (MaxPlatforms-1))
-	// 	{
-	// 		NextPieceLocation += FVector(SpaceBetweenPieces,0,0);
-	// 		PlatformPiece = GetWorld()->SpawnActor<AActor>(EdgePieceClass, NextPieceLocation, FRotator(0,180,0));
-	// 		PlatformPiecesVector.Add(PlatformPiece);
-	// 		PlatformPiecesVector[i+2]->AttachToActor(PlatformPiecesVector[i+1], FAttachmentTransformRules::KeepWorldTransform);
-	// 		PlatformPiecesVector[i+2]->SetLifeSpan(TimeToDeletePreviousPlatform);
-	// 	}
-	// }
-	
-	// FVector NextPieceLocation = EdgePiece1->GetActorLocation();
-	// NextPieceLocation += FVector(SpaceBetweenPieces,0,0);
-	// AActor* MiddlePiece = GetWorld()->SpawnActor<AActor>(MiddlePieceClass, NextPieceLocation, FRotator(0));
-	// MiddlePiece->AttachToActor(EdgePiece1, FAttachmentTransformRules::KeepWorldTransform);
-
-	// NextPieceLocation += FVector(SpaceBetweenPieces,0,0);
-	// AActor* EdgePiece2 = GetWorld()->SpawnActor<AActor>(EdgePieceClass, NextPieceLocation, FRotator(0,180,0));
-	// EdgePiece2->AttachToActor(MiddlePiece, FAttachmentTransformRules::KeepWorldTransform);
-	
+	}	
 }
 
+// Checks if the NewPoint if far enough of other spawned objects (Needs some polish)
 bool APlatformsSpawner::IsPointFarEnough(FVector NewPoint, TArray<FVector> SpawnedPoints, FVector MinimalDistanceVector, TArray<int32> MaxPlatformsVector)
 {
 	//for (FVector &Point : SpawnedPoints)

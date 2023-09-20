@@ -34,6 +34,7 @@ public:
 	UPROPERTY(Instanced, BlueprintReadWrite, Category = Target, meta= (AllowPrivateAccess = "true", ExposeOnSpawn = "true"))
 	ACharacter* FollowCharacter;
 
+	// Updates camera position
 	UFUNCTION()
 	void UpdateCameraPosition();
 

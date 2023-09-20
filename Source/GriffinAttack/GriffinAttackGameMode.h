@@ -16,22 +16,29 @@ protected:
 
 public:
 	AGriffinAttackGameMode();
-	
+
+	// Pawn hit
 	UFUNCTION()
 	void PawnKilled(APawn* PawnKilled);
 
+	// Actor hit
 	UFUNCTION()
 	void ActorHit(AActor* ActorHit);
 
+	// EndGame Checker
 	UFUNCTION()
 	void EndGame(bool bIsPlayerWinner);
 
+	// Spawn Platforms
 	UFUNCTION(BlueprintCallable)
 	void SpawnNextPlatforms();
 
+	// Spawn Archer Tower
 	UFUNCTION()
 	void SpawnArcherTower(float SpaceBetweenPieces, FVector NextPieceLocation);
 
+
+	// Platform spawning
 	UPROPERTY(EditAnywhere, Category = "Platform")
 	TSubclassOf<class APlatformsSpawner> PlatformClass;
 	
@@ -44,6 +51,7 @@ public:
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Platform", meta = (AllowPrivateAccess = "true"))
 	FRotator PlatformSpawnPointRotation = FRotator(0);
 
+	// Scoring Parameters
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = "Score", meta = (AllowPrivateAccess = "true"))
 	float Score = 0.f;
 

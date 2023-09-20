@@ -17,6 +17,8 @@ public:
 	APlatformsSpawner();
 
 private:
+
+	// Components
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Platform", meta = (AllowPrivateAccess = "true"))
 	class UArrowComponent* NextPlatformLocation;
 
@@ -37,12 +39,15 @@ private:
 
 	FTimerHandle DestroyPlatformTimer;
 
+	// Platform lifespan
 	UPROPERTY(EditAnywhere)
 	float TimeToDeletePreviousPlatform= 60.f;
 
+	// Max amount of middle platforms. The total size of the platform will always be MaxMiddlePlatforms + 2
 	UPROPERTY(EditAnywhere)
 	int32 MaxMiddlePlatforms = 3;
 
+	// Classes
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platform", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AActor> EdgePieceClass;
 
@@ -55,12 +60,15 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Platform", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<class AArcherTower> ArcherTowerClass;
 
+	// Minimal distance from another spawned element
 	UPROPERTY(EditAnywhere)
 	FVector MinimalDistance = FVector(150,0, 200);
 
+	// Maximum amount of Elements spawned by the SpawnPlatform function. (Might need some refactoring for clarity)
 	UPROPERTY(EditAnywhere)
 	int32 PlatformAmountMax = 5;
 
+	// Space Between each Platform piece
 	UPROPERTY(EditAnywhere)
 	float SpaceBetweenPieces = 190.f;
 

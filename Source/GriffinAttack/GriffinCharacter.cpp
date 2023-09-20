@@ -3,20 +3,20 @@
 
 #include "GriffinCharacter.h"
 
-#include "ArcherTower.h"
-#include "ArrowProjectile.h"
+// #include "ArcherTower.h"
+// #include "ArrowProjectile.h"
 #include "CameraGriffin.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GriffinAttackCharacter.h"
 #include "GriffinAttackGameMode.h"
-#include "GriffinPlayerController.h"
+// #include "GriffinPlayerController.h"
 #include "InputTriggers.h"
-#include "Vagalume.h"
-#include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
+// #include "Vagalume.h"
+// #include "Camera/CameraComponent.h"
+// #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
+// #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
@@ -32,17 +32,8 @@ AGriffinCharacter::AGriffinCharacter()
 	GetCharacterMovement()->BrakingDecelerationFlying = 1000.f;
 	GetCharacterMovement()->MaxFlySpeed = FlyingSpeed;
 
-	// Camera is now seperate and spawned on begin play
-	// // Setup Character components (Camera Spring Arm, Camera...)
-	// CameraSpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera Spring Arm"));
-	// CameraSpringArm->SetupAttachment(RootComponent);
-	// CameraSpringArm->TargetArmLength = 1000.f;
-
-	// Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	// Camera->SetupAttachment(CameraSpringArm,USpringArmComponent::SocketName);
-
+	// Camera is now separate and spawned on begin play
 	// Mesh and animation are on the derived blueprint.
-
 }
 
 // Called when the game starts or when spawned
@@ -59,6 +50,7 @@ void AGriffinCharacter::BeginPlay()
 		}
 	}
 
+	// Speed buildup timer 
 	if (!GetWorldTimerManager().TimerExists(SpeedBuildUpTimer))
 	{
 		GetWorldTimerManager().SetTimer(SpeedBuildUpTimer, this, &AGriffinCharacter::SpeedBuildUp, BuildUpTimeDelta, true);
@@ -77,7 +69,6 @@ void AGriffinCharacter::BeginPlay()
 	CameraFollow->FollowCharacter = this;
 	APlayerController* ThisPlayerController = UGameplayStatics::GetPlayerController(this,0);
 	ThisPlayerController->SetViewTarget(CameraFollow);
-	
 }
 
 // Called every frame
@@ -85,8 +76,10 @@ void AGriffinCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// Constant x axis speed
 	XAxisSpeedBuildup();
 
+	// Dash speed increase
 	if (IsDashing())
 	{
 		DashSpeedIncrease();	
@@ -103,18 +96,20 @@ void AGriffinCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCo
 		
 		//Dashing and Movement
 		EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Triggered, this, &AGriffinCharacter::Dash);
-		EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Completed, this, &AGriffinCharacter::StopDash);
+		// EnhancedInputComponent->BindAction(DashAction, ETriggerEvent::Completed, this, &AGriffinCharacter::StopDash);
 		EnhancedInputComponent->BindAction(MovementAction, ETriggerEvent::Triggered, this, &AGriffinCharacter::Movement);
 
 	}
 }
 
+// Gives constant speed on the X axis, which is a factor of the max speed.
 void AGriffinCharacter::XAxisSpeedBuildup()
 {
 	const FVector XAxis(1.f,0,0);
 	AddMovementInput(XAxis, InitialSpeedFactor, true);
 }
 
+// Griffin Movement. The griffin can only move on the Z axis.
 void AGriffinCharacter::Movement(const FInputActionValue& Value)
 {	
 	if (Controller != nullptr)
@@ -136,49 +131,33 @@ void AGriffinCharacter::Dash(const FInputActionValue& Value)
 	
 	if (DashUsed != DashMaximum)
 	{
-		// // Desired distance for the dash
-		// float DashDistance = Value.GetMagnitude() * GetCharacterMovement()->MaxFlySpeed * DashVelocityMultiplier;
-		//
-		// // The delta movement in delta seconds
-		// FVector DeltaLocation = FVector::ZeroVector;
-		// DeltaLocation.X = DashDistance * UGameplayStatics::GetWorldDeltaSeconds(this);
-		//
-		// // Add movement as an offset to not interfere with X axis movement
-		// AddActorLocalOffset(DeltaLocation, true);
-
 		// Setup timer to be used in Tick()
-
 		GetWorldTimerManager().SetTimer(DashTimer, this, &AGriffinCharacter::ClearDashTimer, DashInterval);
 
+		// Dash Line Niagara system
 		if (DashLines)
 		{
 			DashLinesComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(this, DashLines, GetActorLocation());
 			DashLinesComponent->Activate();
 		}
-	
-
+		
 		// Dashes used and delay timer
 		DashUsed++;
 		if (!GetWorldTimerManager().TimerExists(DashResetTimer))
 		{
 			GetWorldTimerManager().SetTimer(DashResetTimer, this, &AGriffinCharacter::ResetDashCharges, DashRechargeDelay);
 		}
-		// FVector LaunchVelocity = this->GetVelocity();
-		// float DashAmount = Value.GetMagnitude() * this->GetVelocity().X * DashVelocityMultiplier;
-		// UE_LOG(LogTemp, Warning, TEXT("dash amount is %f and launch velocity is %f, %f, %f"), DashAmount, LaunchVelocity.X, LaunchVelocity.Y, LaunchVelocity.Z);
-		// GetCharacterMovement()->MaxFlySpeed += 100.f;
-		// AddMovementInput(LaunchVelocity, DashAmount);
-		//LaunchCharacter(LaunchVelocity,0,0);
-		//DashUsed++; Not used for now, might change later		
 	}
 }
 
+// Reset the Dash Charges
 void AGriffinCharacter::ResetDashCharges()
 {
 	DashUsed = 0;
 	GetWorldTimerManager().ClearTimer(DashResetTimer);
 }
 
+// Delete dash timer
 void AGriffinCharacter::ClearDashTimer()
 {
 	GetWorldTimerManager().ClearTimer(DashTimer);
@@ -188,46 +167,38 @@ void AGriffinCharacter::ClearDashTimer()
 	}
 }
 
+// X axis speed build up. Increases the speed on the X axis by Y (SpeedIncrease) amount each Z (BuildUpTimeDelta) seconds.
 void AGriffinCharacter::SpeedBuildUp()
 {
 	GetCharacterMovement()->MaxFlySpeed += SpeedIncrease;
-	//GetWorldTimerManager().ClearTimer(SpeedBuildUpTimer);
-	UE_LOG(LogTemp, Warning, TEXT("speed increased to %f"), GetCharacterMovement()->MaxFlySpeed);
 }
 
+// Speed increase due to Dashing
 void AGriffinCharacter::DashSpeedIncrease()
 {
 	const FVector XAxis(1.f,0,0);
 	AddMovementInput(XAxis, InitialSpeedFactor*DashVelocityMultiplier, true);
 }
 
-void AGriffinCharacter::StopDash(const FInputActionValue& Value)
-{
-	
-	//GetCharacterMovement()->MaxFlySpeed = GetCharacterMovement()->MaxFlySpeed - 200.f;
-	// FVector LaunchVelocity = this->GetVelocity();
-	// GetCharacterMovement()->MaxFlySpeed -= 100.f;
-	// float DashAmount = Value.GetMagnitude() * this->GetVelocity().X * DashVelocityMultiplier *(-1);
-	// AddMovementInput(LaunchVelocity, DashAmount);
-	// UE_LOG(LogTemp, Warning, TEXT("max fly speed is %f launch velocity is %f, %f, %f"), GetCharacterMovement()->MaxFlySpeed, LaunchVelocity.X, LaunchVelocity.Y, LaunchVelocity.Z);
-}
-
+// Checks if Griffin is dead
 bool AGriffinCharacter::IsDead()
 {
 	return Health <= 0.f;
 }
 
+// Checks if Griffin is Dashing
 bool AGriffinCharacter::IsDashing()
 {
 	return GetWorldTimerManager().TimerExists(DashTimer);
 }
 
+// Return Health percentage
 float AGriffinCharacter::GetHealthPercent() const
 {
 	return Health / MaxHealth;
-
 }
 
+// Take Damage function and kills this pawn if IsDead() is true
 float AGriffinCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator,
                                     AActor* DamageCauser)
 {
@@ -235,7 +206,6 @@ float AGriffinCharacter::TakeDamage(float DamageAmount, FDamageEvent const& Dama
 
 	DamageToApply = FMath::Min(Health,DamageToApply);
 	Health -= DamageToApply;
-	UE_LOG(LogTemp, Warning, TEXT("Health: %f"), Health);
 
 	if (IsDead())
 	{

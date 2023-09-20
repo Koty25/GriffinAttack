@@ -38,6 +38,7 @@ void AVagalume::Tick(float DeltaTime)
 
 }
 
+// When the Griffin gets a Vagalume, heal the Griffin
 void AVagalume::HealGriffin()
 {
 	GriffinCharacter = Cast<AGriffinCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
@@ -47,24 +48,21 @@ void AVagalume::HealGriffin()
 	}
 }
 
+// On hit function
 void AVagalume::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
-	UE_LOG(LogTemp,Warning,TEXT("HIT1!"));
-	// AActor* MyOwner = GetOwner();
-	// if (MyOwner == nullptr) return;
 	if (OtherActor->IsA(AGriffinCharacter::StaticClass()))
 	{
 		AGriffinAttackGameMode* GameMode = GetWorld()->GetAuthGameMode<AGriffinAttackGameMode>();
-		UE_LOG(LogTemp,Warning,TEXT("HIT2!"));
 		if (GameMode != nullptr)
 		{
-			UE_LOG(LogTemp,Warning,TEXT("HIT3!"));
 			GameMode->ActorHit(this);
 		}
 	}
 }
 
+// Vagalume's Death
 void AVagalume::HandleDestruction()
 {
 	Destroy();

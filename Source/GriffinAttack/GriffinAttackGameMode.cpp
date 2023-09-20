@@ -18,14 +18,9 @@ void AGriffinAttackGameMode::BeginPlay()
 
 AGriffinAttackGameMode::AGriffinAttackGameMode()
 {
-	// set default pawn class to our Blueprinted character
-	// static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/GriffinAttack/Blueprints/BP_GriffinCharacter"));
-	// if (PlayerPawnBPClass.Class != NULL)
-	// {
-	// 	DefaultPawnClass = PlayerPawnBPClass.Class;
-	// }
 }
 
+// When a pawn is killed
 void AGriffinAttackGameMode::PawnKilled(APawn* PawnKilled)
 {
 	APlayerController* PlayerController = Cast<APlayerController>(PawnKilled->GetController());
@@ -34,6 +29,7 @@ void AGriffinAttackGameMode::PawnKilled(APawn* PawnKilled)
 		EndGame(false);
 	}
 
+	// Archer Tower Death. Also adds score
 	if (PawnKilled->IsA(AArcherTower::StaticClass()))
 	{
 		Score += ArcherTowerPoints;
@@ -42,8 +38,10 @@ void AGriffinAttackGameMode::PawnKilled(APawn* PawnKilled)
 	}
 }
 
+// When an actor is killed
 void AGriffinAttackGameMode::ActorHit(AActor* ActorHit)
 {
+	// When the Vagalume is killed and adds score
 	if (ActorHit->IsA(AVagalume::StaticClass()))
 	{
 		Score += VagalumePoints;
@@ -53,6 +51,7 @@ void AGriffinAttackGameMode::ActorHit(AActor* ActorHit)
 	}
 }
 
+// End game state checker
 void AGriffinAttackGameMode::EndGame(bool bIsPlayerWinner)
 {
 	for (AController* Controller : TActorRange<AController>(GetWorld()))
@@ -62,26 +61,24 @@ void AGriffinAttackGameMode::EndGame(bool bIsPlayerWinner)
 	}
 }
 
+// Platform spawning function. It spawns in a random location.
 void AGriffinAttackGameMode::SpawnNextPlatforms()
-{
-	UE_LOG(LogTemp,Warning, TEXT("Vector: %s"), *PlatformSpawnPointLocation.ToString());
-	
+{	
 	APlatformsSpawner* PlatformsSpawner = GetWorld()->SpawnActor<APlatformsSpawner>(PlatformClass, PlatformSpawnPointLocation, PlatformSpawnPointRotation);
 
+	// Gives the location for the next platform
 	PlatformSpawnPointLocation = PlatformsSpawner->GetNextPlatformLocation();
-
-	UE_LOG(LogTemp,Warning, TEXT("Vector: %s"), *PlatformSpawnPointLocation.ToString());
-	
 }
 
+// Spawns the Archer Tower in a Random location of a platform.
 void AGriffinAttackGameMode::SpawnArcherTower(float SpaceBetweenPieces, FVector NextPieceLocation)
 {
+	// Archer tower spawn location. It spawn in a random location of the platform.
 	FVector ArcherTowerLocation = NextPieceLocation + FVector(FMath::RandRange(-SpaceBetweenPieces/4, SpaceBetweenPieces/4), 0, 33);				
 	AArcherTower* ArcherTowerPiece = GetWorld()->SpawnActor<AArcherTower>(ArcherTowerClass, ArcherTowerLocation, FRotator(0));
+	
 	if (ArcherTowerPiece)
 	{
 		ArcherTowerPiece->SpawnDefaultController();	
 	}
-	//ArcherTowerPiece->AttachToActor(PlatformPiecesVector[i+1], FAttachmentTransformRules::KeepWorldTransform);
-	UE_LOG(LogTemp,Warning, TEXT("Spawn ArcherTower!"));
 }

@@ -5,7 +5,6 @@
 
 #include "ArrowProjectile.h"
 #include "GriffinAttackGameMode.h"
-// #include "GriffinCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -14,7 +13,8 @@ AArcherTower::AArcherTower()
 {
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	
+	// Component Creation
 	CapsuleComp = CreateDefaultSubobject<UCapsuleComponent>(TEXT("Capsule Collider"));
 	RootComponent = CapsuleComp;
 	TowerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tower Mesh"));
@@ -31,6 +31,7 @@ void AArcherTower::BeginPlay()
 
 	GriffinCharacter = Cast<AGriffinCharacter>(UGameplayStatics::GetPlayerPawn(this, 0));
 
+	// Timer to set the firing rate
 	GetWorldTimerManager().SetTimer(FireRateTimerHandle, this, &AArcherTower::CheckFireCondition, FireRate, true);
 
 	// OnHit event
@@ -42,16 +43,15 @@ void AArcherTower::BeginPlay()
 void AArcherTower::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
 void AArcherTower::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
+// Checks if Griffin is in range and alive
 void AArcherTower::CheckFireCondition()
 {
 	if (InFireRange() && GriffinCharacter->bGriffinAlive)
@@ -60,6 +60,7 @@ void AArcherTower::CheckFireCondition()
 	}
 }
 
+// In range check
 bool AArcherTower::InFireRange()
 {
 	if (GriffinCharacter)
@@ -74,15 +75,18 @@ bool AArcherTower::InFireRange()
 	return false;
 }
 
+// Fire the arrow, spawning it at the projectile spawn point
 void AArcherTower::Fire()
 {
 	FVector ProjectileSpawnPointLocation = ProjectileSpawnPoint->GetComponentLocation();
+	// Might add a rotation to give the arrow more distance and an arch
 	FRotator ProjectileSpawnPointRotation = ProjectileSpawnPoint->GetComponentRotation();
 
 	AArrowProjectile* Projectile = GetWorld()->SpawnActor<AArrowProjectile>(ProjectileClass, ProjectileSpawnPointLocation, ProjectileSpawnPointRotation);
 	Projectile->SetOwner(this);
 }
 
+// On Hit function. If the Griffin is dashing, the Archer Tower dies, if not, the Griffin dies.
 void AArcherTower::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
@@ -116,6 +120,7 @@ void AArcherTower::OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, 
 	}
 }
 
+// Archer Tower Destruction
 void AArcherTower::HandleDestruction()
 {
 	Destroy();

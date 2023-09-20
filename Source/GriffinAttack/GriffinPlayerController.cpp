@@ -5,6 +5,7 @@
 
 #include "Blueprint/UserWidget.h"
 
+// Adds Player's HUD with Health, Dash Charges and Score
 void AGriffinPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -16,28 +17,16 @@ void AGriffinPlayerController::BeginPlay()
 	}
 }
 
+// Deletes Players HUD and adds a Game over screen. Restart the level.
 void AGriffinPlayerController::GameHasEnded(AActor* EndGameFocus, bool bIsWinner)
 {
 	Super::GameHasEnded(EndGameFocus, bIsWinner);
 
 	HUD->RemoveFromParent();
-	//if (bIsWinner)
-	//{
 		UUserWidget* EndScreen =  CreateWidget(this, EndScreenClass);
 		if (EndScreen != nullptr)
 		{
 			EndScreen->AddToViewport();
 		}
-	//}
-	//else
-	//{
-		// UUserWidget* LoseScreen =  CreateWidget(this, LoseScreenClass);
-		// if (LoseScreen != nullptr)
-		// {
-		// 	LoseScreen->AddToViewport();
-		// }	
-	//}
-	
-	
 	GetWorldTimerManager().SetTimer(RestartTimer, this, &APlayerController::RestartLevel, RestartDelay);
 }

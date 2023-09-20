@@ -27,7 +27,7 @@ protected:
 
 	void Dash(const FInputActionValue& Value);
 
-	void StopDash(const FInputActionValue& Value);
+	// void StopDash(const FInputActionValue& Value);
 
 public:	
 	// Called every frame
@@ -88,13 +88,14 @@ public:
 	FTimerHandle SpeedBuildUpTimer;
 	float SpeedIncrease = 5.f;
 
-	// Health and Contact Damage
+	// Health
 	bool bGriffinAlive = true;
 	float Health;
 	
 	UPROPERTY(EditAnywhere,BlueprintReadOnly,Category = Health, meta = (AllowPrivateAccess = "true"))	
 	float MaxHealth = 100.f;
 
+	// Dash Lines
 	UPROPERTY(EditAnywhere)
 	class UNiagaraSystem* DashLines;
 	
@@ -106,30 +107,39 @@ public:
 
 	/** ==========Functions========== */
 
+	// Constant speed on the X axis
 	UFUNCTION()
 	void XAxisSpeedBuildup();
 
+	// Resets Dash charges
 	UFUNCTION()
 	void ResetDashCharges();
 
+	// Clears Dash timer
 	UFUNCTION()
 	void ClearDashTimer();
 
+	// X axis buildup
 	UFUNCTION()
 	void SpeedBuildUp();
 
+	// Speed increase due to Dashing
 	UFUNCTION()
 	void DashSpeedIncrease();
 
+	// Checks if Griffin is dead
 	UFUNCTION(BlueprintPure)
 	bool IsDead();
 
+	// Checks if Griffin is Dashing
 	UFUNCTION(BlueprintPure)
 	bool IsDashing();
 
+	// Returns Health percentage
 	UFUNCTION(BlueprintPure)
 	float GetHealthPercent() const;
 
+	// Take Damage function
 	UFUNCTION()
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 

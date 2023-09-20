@@ -13,12 +13,12 @@ AArrowProjectile::AArrowProjectile()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	// Components
 	ProjectileMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Projectile Mesh"));
 	RootComponent = ProjectileMesh;
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Projectile Movement Component"));
-	// ProjectileTrace = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("Projectile Trace"));
-	// ProjectileTrace->SetupAttachment(RootComponent);
-	
+
+	// Set Arrow speed parameters
 	ProjectileMovementComponent->InitialSpeed = 600.f;
 	ProjectileMovementComponent->MaxSpeed = 700.f;
 
@@ -29,6 +29,7 @@ void AArrowProjectile::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// On Hit event
 	ProjectileMesh->OnComponentHit.AddDynamic(this, &AArrowProjectile::OnHit);
 	if (LaunchSound)
 	{
@@ -41,9 +42,9 @@ void AArrowProjectile::BeginPlay()
 void AArrowProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
+// On Hit function. Applies damage to the Griffin only
 void AArrowProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
@@ -69,6 +70,7 @@ void AArrowProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, U
 	
 }
 
+// Arrow's Death
 void AArrowProjectile::HandleDestruction()
 {
 	Destroy();
